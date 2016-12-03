@@ -1,6 +1,7 @@
 import System.Random
 import Control.Monad (replicateM)
 import Data.Array (array, Array, (!))
+
     
 -- World
 --   size
@@ -14,8 +15,8 @@ import Data.Array (array, Array, (!))
 --
 
 
-width  = 4
-height = 4
+width  = 30
+height = 30
 
 data CellState = Alive | Dead deriving (Show, Eq)
     
@@ -47,7 +48,7 @@ randomWorld w h = do
   return (World (reshape w h cells) (w,h))
 
 cellAt :: World a -> (Int, Int) -> a
-cellAt (World xs _) loc = xs ! loc
+cellAt (World cells _) loc = cells ! loc
 
 mooreNeighbors = [(-1,-1), (0,-1), (1,-1),
                   (-1, 0),         (1, 0),
@@ -60,14 +61,42 @@ boundedNeighbors :: (Int,Int) -> (Int,Int) -> [(Int,Int)]
 boundedNeighbors bounds point = map (wrap bounds) (neighbors point)
 
 
+count :: Eq a => a -> [a] -> Int
+count x xs = length (filter (x==) xs)
 
---countLivingNeighbors :: World a -> (Int,Int)
+neighborsStates :: World CellState -> (Int,Int) -> [CellState]
+neighborsStates w (x,y) = map (\loc -> cellAt w loc) (boundedNeighbors (worldBounds w) (x,y))
 
-transition :: World a -> World a
-transition = undefined
+conwaysRules :: CellState -> Int -> CellState
+conwaysRules Dead n | n == 3 = Alive
+conwaysRules Alive n | n == 2 || n == 3 = Alive
+conwaysRules _ _ = Dead
 
 
---
-w = (randomWorld width height) 
+                   
+step :: World CellState -> World CellState
+step world@(World cells (w,h)) = World cells' (w,h)
+    where
+      cells' = reshape w h [conwaysRules (cells!(x,y)) (count Alive (neighborsStates world (x, y))) | x<-[0..w-1], y<-[0..h-1]]
+
+renderCell :: CellState -> String
+renderCell Alive = "#"
+renderCell Dead  = "."
+      
+renderWorld :: World CellState -> String
+renderWorld (World cells (w,h)) = foldl (++) "" [(if y==0 then "\n" else "") ++ (renderCell (cells!(x,y))) | x<-[0..w-1], y<-[0..h-1]] 
+      
 main = do
-  w >>= print
+  a <- randomWorld width height
+  let b = step a
+  let c = step b
+  putStrLn $ renderWorld a
+  putStrLn "--------------------------------------------------"
+  putStrLn $ renderWorld b
+  putStrLn "--------------------------------------------------"
+  putStrLn $ renderWorld c
+  putStrLn "--------------------------------------------------"
+  putStrLn "--------------------------------------------------"
+
+
+-- 
