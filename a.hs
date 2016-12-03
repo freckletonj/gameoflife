@@ -85,18 +85,23 @@ renderCell Dead  = "."
       
 renderWorld :: World CellState -> String
 renderWorld (World cells (w,h)) = foldl (++) "" [(if y==0 then "\n" else "") ++ (renderCell (cells!(x,y))) | x<-[0..w-1], y<-[0..h-1]] 
-      
+
+start = do
+    a <- randomWorld width height
+    return a
+
+
+loop :: World CellState -> IO ()
+loop w = go w
+    where go world = do
+            line <- getLine
+            putStrLn (renderWorld world)
+            let nw = step world
+            if line == "q"
+            then return ()
+            else go nw
+    
 main = do
-  a <- randomWorld width height
-  let b = step a
-  let c = step b
-  putStrLn $ renderWorld a
-  putStrLn "--------------------------------------------------"
-  putStrLn $ renderWorld b
-  putStrLn "--------------------------------------------------"
-  putStrLn $ renderWorld c
-  putStrLn "--------------------------------------------------"
-  putStrLn "--------------------------------------------------"
-
-
--- 
+  a <- start
+  loop a
+  return "end"
