@@ -2,22 +2,16 @@ import System.Random
 import Control.Monad (replicateM)
 import Data.Array (array, Array, (!))
 
-    
--- World
---   size
---   topology (torus)
---   world shape (squares? hex?)
---   setting cells (side-effectually, as well)
---
--- Transition Fn
---   deterministic (later, stochastic)
---   neighbor counts only (later, more complex, eg neighbor's class)
---
+-- Cool game idea:
+--      players can create a certain number of cells per time period
+--      objective is to command the "board"
+--      players can spend some in game currency to create, or vote on new "rules"
+--      rules might expire?
 
 
-width  = 30
-height = 30
-
+width  = 40
+height = 40
+         
 data CellState = Alive | Dead deriving (Show, Eq)
     
 randomCell :: IO CellState
@@ -96,11 +90,14 @@ loop w = go w
     where go world = do
             line <- getLine
             putStrLn (renderWorld world)
-            let nw = step world
-            if line == "q"
-            then return ()
-            else go nw
-    
+            case line of
+              "q" -> return ()
+              "10" -> go (skip world 10) -- note: this won't print until 2 executions from the request
+              "100" -> go (skip world 100)
+              "1000" -> go (skip world 1000) -- note: this slows things down immensely! indeterminately more than 10x "100"
+              _ -> go (step world)
+          skip world n = foldl (\c _ -> step c) world [0..n] 
+
 main = do
   a <- start
   loop a
